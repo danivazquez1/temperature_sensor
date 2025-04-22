@@ -7,7 +7,7 @@ import json
 
 
 # 🔐 Inicializar Firebase
-firebase_key_json = os.environ["FIREBASE_KEY_JSON"]
+firebase_key_json = os.environ["FIREBASE_KEY"]
 cred = credentials.Certificate(json.loads(firebase_key_json))
 firebase_admin.initialize_app(cred)
 db = firestore.client()
