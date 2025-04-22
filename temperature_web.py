@@ -4,7 +4,7 @@ from firebase_admin import credentials, firestore
 import time
 
 # 🔐 Inicializar Firebase
-cred = credentials.Certificate("GOOGLE_APPLICATION_CREDENTIALS")
+cred = credentials.Certificate("FIREBASE_KEY_JSON")
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
