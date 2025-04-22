@@ -4,6 +4,7 @@ from firebase_admin import credentials, firestore
 import time
 import os
 import json
+from flask import redirect
 
 
 # 🔐 Inicializar Firebase
@@ -79,9 +80,9 @@ def stream(sensor_id):
     )
 
 # 🔧 Página raíz opcional
-@app.route('/')
+@app.route("/")
 def index():
-    return '<h3>🌡 Visita /stream/TEMP_RPI_BME680 para ver los datos del sensor</h3>'
+    return redirect("/stream/TEMP_RPI_BME680")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8081, debug=True)
