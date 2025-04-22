@@ -2,9 +2,13 @@ from flask import Flask, render_template_string, abort
 import firebase_admin
 from firebase_admin import credentials, firestore
 import time
+import os
+import json
+
 
 # 🔐 Inicializar Firebase
-cred = credentials.Certificate("FIREBASE_KEY_JSON")
+firebase_key_json = os.environ["FIREBASE_KEY_JSON"]
+cred = credentials.Certificate(json.loads(firebase_key_json))
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
