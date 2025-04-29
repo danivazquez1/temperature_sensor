@@ -27,6 +27,11 @@ HTML_TEMPLATE = """
 <html>
 <head>
     <title>Sensor {{ sensor_id }}</title>
+    <h2>🔍 Sensor: {{ sensor_id }}</h2>
+    <!-- Botón de descarga -->
+    <a href="/download/{{ sensor_id }}" class="btn btn-primary mb-3" target="_blank">
+        📥 Descargar datos (últimos 3 días)
+    </a>
     <meta http-equiv="refresh" content="3">
     <style>
         {% raw %}
