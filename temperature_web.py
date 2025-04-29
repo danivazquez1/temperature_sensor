@@ -5,6 +5,11 @@ import time
 import os
 import json
 from flask import redirect
+from flask import make_response
+import io
+import csv
+from datetime import datetime, timedelta
+
 
 
 # 🔐 Inicializar Firebase
@@ -60,8 +65,42 @@ HTML_TEMPLATE = """
 </body>
 </html>
 """
+@app.route('/download/<sensor_id>')
+def download_sensor_data(sensor_id):
+    three_days_ago = time.time() - (3 * 24 * 60 * 60)
 
+    # Consultar Firestore por las lecturas del sensor en los últimos 3 días
+    query = db.collection("temperature_logs")\
+              .where("sensor_id", "==", sensor_id)\
+              .where("timestamp", ">=", three_days_ago)\
+              .order_by("timestamp")\
+              .stream()
 
+    entries = [doc.to_dict() for doc in query]
+
+    if not entries:
+        abort(404, description="No se encontraron datos recientes para este sensor.")
+
+    # Crear CSV en memoria
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["timestamp", "sensor_id", "temperature", "humidity", "pressure", "gas"])
+
+    for entry in entries:
+        writer.writerow([
+            datetime.fromtimestamp(entry["timestamp"]).isoformat(),
+            entry["sensor_id"],
+            entry["temperature"],
+            entry["humidity"],
+            entry["pressure"],
+            entry["gas"]
+        ])
+
+    # Enviar como descarga
+    response = make_response(output.getvalue())
+    response.headers["Content-Disposition"] = f"attachment; filename={sensor_id}_last_3_days.csv"
+    response.headers["Content-type"] = "text/csv"
+    return response
 
 @app.route('/stream/<sensor_id>')
 def stream(sensor_id):
