@@ -1,16 +1,9 @@
-from flask import Flask, render_template_string, abort
+from flask import Flask, render_template_string
 import firebase_admin
 from firebase_admin import credentials, firestore
 import time
 import os
 import json
-from flask import redirect
-from flask import make_response
-import io
-import csv
-from datetime import datetime, timedelta
-
-
 
 # 🔐 Inicializar Firebase
 firebase_key_json = os.environ["FIREBASE_KEY"]
@@ -21,20 +14,14 @@ db = firestore.client()
 # 🚀 Iniciar app Flask
 app = Flask(__name__)
 
-# HTML embebido (puedes luego separarlo si lo deseas)
+# HTML embebido
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
 <head>
     <title>Sensor {{ sensor_id }}</title>
-    <h2>🔍 Sensor: {{ sensor_id }}</h2>
-    <!-- Botón de descarga -->
-    <a href="/download/{{ sensor_id }}" class="btn btn-primary mb-3" target="_blank">
-        📥 Descargar datos (últimos 3 días)
-    </a>
     <meta http-equiv="refresh" content="3">
     <style>
-        {% raw %}
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f6f8;
@@ -55,7 +42,6 @@ HTML_TEMPLATE = """
             font-size: 1.2rem;
             margin-bottom: 0.5rem;
         }
-        {% endraw %}
     </style>
 </head>
 <body>
@@ -70,48 +56,12 @@ HTML_TEMPLATE = """
 </body>
 </html>
 """
-@app.route('/download/<sensor_id>')
-def download_sensor_data(sensor_id):
-    three_days_ago = time.time() - (3 * 24 * 60 * 60)
-
-    # Consultar Firestore por las lecturas del sensor en los últimos 3 días
-    query = db.collection("temperature_logs")\
-              .where("sensor_id", "==", sensor_id)\
-              .where("timestamp", ">=", three_days_ago)\
-              .order_by("timestamp")\
-              .stream()
-
-    entries = [doc.to_dict() for doc in query]
-
-    if not entries:
-        abort(404, description="No se encontraron datos recientes para este sensor.")
-
-    # Crear CSV en memoria
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(["timestamp", "sensor_id", "temperature", "humidity", "pressure", "gas"])
-
-    for entry in entries:
-        writer.writerow([
-            datetime.fromtimestamp(entry["timestamp"]).isoformat(),
-            entry["sensor_id"],
-            entry["temperature"],
-            entry["humidity"],
-            entry["pressure"],
-            entry["gas"]
-        ])
-
-    # Enviar como descarga
-    response = make_response(output.getvalue())
-    response.headers["Content-Disposition"] = f"attachment; filename={sensor_id}_last_3_days.csv"
-    response.headers["Content-type"] = "text/csv"
-    return response
 
 @app.route('/stream/<sensor_id>')
 def stream(sensor_id):
     doc = db.collection("temperature").document(sensor_id).get()
     if not doc.exists:
-        abort(404, description=f"Sensor {sensor_id} no encontrado.")
+        return f"No hay datos para {sensor_id}", 404
     
     data = doc.to_dict()
     ts = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data.get("timestamp", 0)))
@@ -123,10 +73,9 @@ def stream(sensor_id):
         timestamp=ts
     )
 
-# 🔧 Página raíz opcional
 @app.route("/")
 def index():
-    return redirect("/stream/TEMP_RPI_BME680")
+    return "<b>🔈 Visita /stream/TEMP_RPI_BME680 para ver los datos del sensor</b>"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8081, debug=True)

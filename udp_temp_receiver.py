@@ -56,7 +56,7 @@ def start_udp_listener():
                     }
 
                     # Guardar en Firestore
-                    db.collection("temperature_logs").add(entry)
+                    db.collection("temperature").document(sensor_id).set(entry, merge=True)
                     # Actualizar datos locales
                     temperature_data[sensor_id] = entry
                     print(f"✅ Guardado: {entry}")
